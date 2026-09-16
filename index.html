@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear Equation Visualizer & Quiz</title>
+  <style>
+    :root[data-theme="light"] {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --accent-color: #059669;
+      --accent-light: #ecfdf5;
+      --danger-color: #dc2626;
+      --danger-light: #fef2f2;
+      --focus-ring: #3b82f6;
+    }
+
+    :root[data-theme="dark"] {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --primary-color: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-light: #1e3a8a;
+      --accent-color: #10b981;
+      --accent-light: #064e3b;
+      --danger-color: #ef4444;
+      --danger-light: #7f1d1d;
+      --focus-ring: #60a5fa;
+    }
+
+    :root[data-theme="high-contrast"] {
+      --bg-color: #000000;
+      --card-bg: #121212;
+      --text-main: #ffffff;
+      --text-muted: #e0e0e0;
+      --border-color: #ffffff;
+      --primary-color: #ffff00;
+      --primary-hover: #ffffa0;
+      --primary-light: #333300;
+      --accent-color: #00ff00;
+      --accent-light: #003300;
+      --danger-color: #ff3333;
+      --danger-light: #440000;
+      --focus-ring: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; transition: background-color 0.2s, color 0.2s; }
+
+    .app-container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Header Controls */
+    header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: var(--card-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); }
+    .title { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+    .header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    button, select, input {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    button:focus, select:focus, input:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+    button.btn-primary { background: var(--primary-color); color: #fff; border: none; font-weight: 600; }
+    :root[data-theme="high-contrast"] button.btn-primary { color: #000; }
+    button.btn-primary:hover { background: var(--primary-hover); }
+
+    /* Nav Tabs */
+    .level-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .tab-btn { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; white-space: nowrap; font-size: 0.85rem; }
+    .tab-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: 600; }
+    :root[data-theme="high-contrast"] .tab-btn.active { color: #000; }
+
+    /* Grid Layout */
+    .main-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+    @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px; }
+
+    /* Math Display */
+    .equation-board { text-align: center; padding: 20px; background: var(--primary-light); border-radius: 8px; border: 1px dashed var(--primary-color); }
+    .equation-text { font-family: "Courier New", Courier, monospace; font-size: 1.8rem; font-weight: bold; letter-spacing: 1px; }
+    .operation-badge { display: inline-block; margin-top: 8px; padding: 4px 10px; background: var(--accent-color); color: white; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+    :root[data-theme="high-contrast"] .operation-badge { color: #000; }
+
+    /* Balance Visual Scale */
+    .balance-container { height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; position: relative; }
+    .balance-beam { width: 80%; height: 6px; background: var(--text-main); position: relative; transition: transform 0.3s; }
+    .balance-base { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 25px solid var(--text-main); }
+    .pan { position: absolute; top: -40px; width: 60px; height: 40px; border: 2px solid var(--text-main); border-top: none; border-radius: 0 0 10px 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .pan.left { left: 0; transform: translateX(-50%); }
+    .pan.right { right: 0; transform: translateX(50%); }
+
+    /* Quiz Panel */
+    .options-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .option-btn { text-align: left; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); cursor: pointer; transition: background 0.15s; }
+    .option-btn:hover { background: var(--primary-light); }
+    .feedback { padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; display: none; }
+    .feedback.correct { background: var(--accent-light); color: var(--accent-color); border: 1px solid var(--accent-color); display: block; }
+    .feedback.incorrect { background: var(--danger-light); color: var(--danger-color); border: 1px solid var(--danger-color); display: block; }
+
+    /* History Rail */
+    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+    .history-item { padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); font-family: monospace; font-size: 0.9rem; }
+    .history-item.active { border-left: 4px solid var(--primary-color); background: var(--primary-light); }
+
+    /* Keyboard legend */
+    .keyboard-legend { display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.75rem; color: var(--text-muted); padding: 8px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; }
+    .key { background: var(--border-color); color: var(--text-main); padding: 2px 5px; border-radius: 3px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <header>
+    <div class="title">Linear Equation Visualizer</div>
+    <div class="header-controls">
+      <select id="modeSelect" aria-label="Select Mode" onchange="switchMode(this.value)">
+        <option value="explorer">Guided Explorer Mode</option>
+        <option value="quiz">Self-Check Quiz Mode</option>
+      </select>
+      <select id="themeSelect" aria-label="Select Theme" onchange="changeTheme(this.value)">
+        <option value="light">Light Theme</option>
+        <option value="dark">Dark Theme</option>
+        <option value="high-contrast">High Contrast</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Level Selection -->
+  <div class="level-tabs" id="levelTabs">
+    <button class="tab-btn active" onclick="loadLevel(1)">L1: One-Step</button>
+    <button class="tab-btn" onclick="loadLevel(2)">L2: Two-Step</button>
+    <button class="tab-btn" onclick="loadLevel(3)">L3: Both Sides</button>
+    <button class="tab-btn" onclick="loadLevel(4)">L4: Distributive</button>
+    <button class="tab-btn" onclick="loadLevel(5)">L5: Fractions (LCD)</button>
+    <button class="tab-btn" onclick="loadLevel(6)">L6: Decimals</button>
+    <button class="tab-btn" onclick="enableCustomInput()">Custom Input</button>
+  </div>
+
+  <!-- Custom Input Bar -->
+  <div id="customBar" style="display:none; gap: 8px; align-items: center;">
+    <input type="text" id="customInput" placeholder="Enter equation e.g. 3(x + 2) = 15" style="flex:1;">
+    <button class="btn-primary" onclick="submitCustomEquation()">Load Equation</button>
+  </div>
+
+  <div class="main-grid">
+    <!-- Left Panel: Main Display -->
+    <div class="card">
+      <div class="equation-board">
+        <div class="equation-text" id="currentExpr">3x = 12</div>
+        <div class="operation-badge" id="currentOp">Initial Equation</div>
+      </div>
+
+      <!-- Interactive Balance Scale -->
+      <div class="balance-container">
+        <div class="balance-beam" id="balanceBeam">
+          <div class="pan left" id="leftPan">L</div>
+          <div class="pan right" id="rightPan">R</div>
+        </div>
+        <div class="balance-base"></div>
+      </div>
+
+      <!-- Controls (Explorer Mode) -->
+      <div id="explorerControls" style="display: flex; gap: 8px; justify-content: center;">
+        <button onclick="prevStep()">Previous Step (←)</button>
+        <button class="btn-primary" onclick="nextStep()">Next Step (→)</button>
+        <button onclick="resetSteps()">Reset (R)</button>
+      </div>
+
+      <!-- Controls (Quiz Mode) -->
+      <div id="quizPanel" style="display: none;" class="card">
+        <div style="font-weight: 600;">What is the next best algebraic step?</div>
+        <div class="options-grid" id="quizOptions"></div>
+        <div class="feedback" id="quizFeedback"></div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Step History -->
+    <div class="card">
+      <div style="font-weight: 600;">Solution Steps</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Cheat Sheet -->
+  <div class="keyboard-legend">
+    <span>Shortcuts:</span>
+    <span><span class="key">←</span> / <span class="key">→</span> Navigate Steps</span>
+    <span><span class="key">R</span> Reset</span>
+    <span><span class="key">1-6</span> Switch Levels</span>
+    <span><span class="key">T</span> Cycle Theme</span>
+  </div>
+</div>
+
+<script>
+  // Preserved Level Data
+  const levels = {
+    1: { expr: "3x = 12", steps: [{ expr: "3x = 12", op: "Original Equation" }, { expr: "x = 4", op: "Divide both sides by 3" }] },
+    2: { expr: "2x + 4 = 10", steps: [{ expr: "2x + 4 = 10", op: "Original Equation" }, { expr: "2x = 6", op: "Subtract 4 from both sides" }, { expr: "x = 3", op: "Divide both sides by 2" }] },
+    3: { expr: "5x - 3 = 2x + 9", steps: [{ expr: "5x - 3 = 2x + 9", op: "Original Equation" }, { expr: "3x - 3 = 9", op: "Subtract 2x from both sides" }, { expr: "3x = 12", op: "Add 3 to both sides" }, { expr: "x = 4", op: "Divide both sides by 3" }] },
+    4: { expr: "3(x + 2) = 2x + 11", steps: [{ expr: "3(x + 2) = 2x + 11", op: "Original Equation" }, { expr: "3x + 6 = 2x + 11", op: "Distribute 3 on left side" }, { expr: "x + 6 = 11", op: "Subtract 2x from both sides" }, { expr: "x = 5", op: "Subtract 6 from both sides" }] },
+    5: { expr: "(x/2) + (x/3) = 5", steps: [{ expr: "(x/2) + (x/3) = 5", op: "Original Equation" }, { expr: "6 * [(x/2) + (x/3)] = 6 * 5", op: "Multiply all terms by LCD = 6" }, { expr: "3x + 2x = 30", op: "Simplify terms" }, { expr: "5x = 30", op: "Combine like terms" }, { expr: "x = 6", op: "Divide both sides by 5" }] },
+    6: { expr: "0.25x + 1.5 = 0.5x - 0.75", steps: [{ expr: "0.25x + 1.5 = 0.5x - 0.75", op: "Original Equation" }, { expr: "25x + 150 = 50x - 75", op: "Multiply by 100 to clear decimals" }, { expr: "150 = 25x - 75", op: "Subtract 25x from both sides" }, { expr: "225 = 25x", op: "Add 75 to both sides" }, { expr: "x = 9", op: "Divide both sides by 25" }] }
+  };
+
+  let currentLevel = 1;
+  let activeSteps = levels[1].steps;
+  let stepIdx = 0;
+  let appMode = "explorer";
+
+  function loadLevel(lvl) {
+    currentLevel = lvl;
+    activeSteps = levels[lvl].steps;
+    stepIdx = 0;
+    document.getElementById("customBar").style.display = "none";
+    updateTabs();
+    renderStep();
+  }
+
+  function updateTabs() {
+    const btns = document.querySelectorAll('.tab-btn');
+    btns.forEach((btn, idx) => {
+      if (idx + 1 === currentLevel && document.getElementById("customBar").style.display === "none") {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  function renderStep() {
+    const cur = activeSteps[stepIdx];
+    document.getElementById("currentExpr").innerText = cur.expr;
+    document.getElementById("currentOp").innerText = cur.op;
+
+    // History rendering
+    const historyList = document.getElementById("historyList");
+    historyList.innerHTML = "";
+    activeSteps.forEach((s, idx) => {
+      const item = document.createElement("div");
+      item.className = "history-item " + (idx === stepIdx ? "active" : "");
+      item.innerText = `${idx + 1}. ${s.expr} (${s.op})`;
+      item.onclick = () => { stepIdx = idx; renderStep(); };
+      historyList.appendChild(item);
+    });
+
+    if (appMode === "quiz") {
+      renderQuizOptions();
+    }
+  }
+
+  function nextStep() {
+    if (stepIdx < activeSteps.length - 1) {
+      stepIdx++;
+      renderStep();
+    }
+  }
+
+  function prevStep() {
+    if (stepIdx > 0) {
+      stepIdx--;
+      renderStep();
+    }
+  }
+
+  function resetSteps() {
+    stepIdx = 0;
+    renderStep();
+  }
+
+  function switchMode(mode) {
+    appMode = mode;
+    document.getElementById("explorerControls").style.display = mode === "explorer" ? "flex" : "none";
+    document.getElementById("quizPanel").style.display = mode === "quiz" ? "block" : "none";
+    renderStep();
+  }
+
+  function renderQuizOptions() {
+    const container = document.getElementById("quizOptions");
+    const feedback = document.getElementById("quizFeedback");
+    container.innerHTML = "";
+    feedback.className = "feedback";
+
+    if (stepIdx >= activeSteps.length - 1) {
+      container.innerHTML = "<div>Equation fully solved! Select another level to practice.</div>";
+      return;
+    }
+
+    const correctOp = activeSteps[stepIdx + 1].op;
+    const distractors = [
+      "Multiply both sides by 2",
+      "Add 5 to both sides",
+      "Divide both sides by 10",
+      "Distribute -1"
+    ].filter(d => d !== correctOp).slice(0, 2);
+
+    const choices = [correctOp, ...distractors].sort(() => Math.random() - 0.5);
+
+    choices.forEach(choice => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.innerText = choice;
+      btn.onclick = () => {
+        if (choice === correctOp) {
+          feedback.innerText = "Correct! Advancing to the next step...";
+          feedback.className = "feedback correct";
+          setTimeout(() => { nextStep(); }, 1000);
+        } else {
+          feedback.innerText = "Incorrect. Try again or review the equation balance.";
+          feedback.className = "feedback incorrect";
+        }
+      };
+      container.appendChild(btn);
+    });
+  }
+
+  function enableCustomInput() {
+    document.getElementById("customBar").style.display = "flex";
+    const btns = document.querySelectorAll('.tab-btn');
+    btns.forEach(btn => btn.classList.remove('active'));
+    btns[btns.length - 1].classList.add('active');
+  }
+
+  function submitCustomEquation() {
+    const val = document.getElementById("customInput").value.trim();
+    if (!val || !val.includes("=")) {
+      alert("Please enter a valid single-variable equation with '=' sign.");
+      return;
+    }
+    activeSteps = [
+      { expr: val, op: "Original Custom Equation" },
+      { expr: "Simplified Equation", op: "Step-by-step custom solver sequence" }
+    ];
+    stepIdx = 0;
+    renderStep();
+  }
+
+  function changeTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+
+  // Keyboard Navigation
+  window.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowRight") nextStep();
+    if (e.key === "ArrowLeft") prevStep();
+    if (e.key.toLowerCase() === "r") resetSteps();
+    if (e.key >= "1" && e.key <= "6") loadLevel(parseInt(e.key));
+    if (e.key.toLowerCase() === "t") {
+      const themes = ["light", "dark", "high-contrast"];
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = themes[(themes.indexOf(current) + 1) % themes.length];
+      changeTheme(next);
+      document.getElementById("themeSelect").value = next;
+    }
+  });
+
+  // Init
+  loadLevel(1);
+</script>
+</body>
+</html>
